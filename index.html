@@ -1,0 +1,2118 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library book — E-Books &amp; Audio Library</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Razorpay Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- EmailJS SDK for Gmail OTPs -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <!-- Firebase Compat SDKs (App, Firestore, Storage) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .card-elevated {
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+        }
+        .card-elevated:hover {
+            box-shadow: 0 12px 28px -4px rgba(79, 70, 229, 0.14);
+        }
+        @keyframes pulse-wave {
+            0%, 100% { transform: scale(0.96); opacity: 0.75; }
+            50% { transform: scale(1.06); opacity: 0.35; }
+        }
+        .audio-pulse {
+            animation: pulse-wave 1.8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- ==================== TOP HEADER ==================== -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+            <!-- Brand Logo -->
+            <div onclick="switchView('store')" class="flex items-center gap-2 cursor-pointer shrink-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-800 text-white flex items-center justify-center shadow-md shadow-brand-600/20 shrink-0">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-sm sm:text-lg font-extrabold text-slate-900 tracking-tight whitespace-nowrap">Library book</h1>
+                    <p class="text-[10px] sm:text-[11px] font-medium text-slate-500 -mt-0.5 whitespace-nowrap">E-Books &amp; Audio</p>
+                </div>
+            </div>
+
+            <!-- Header Action Buttons -->
+            <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+                <!-- Share App -->
+                <button onclick="openShareAppModal()" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition active:scale-95" title="Share Website">
+                    <svg class="w-4 h-4 text-brand-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                    <span class="hidden md:inline">Share App</span>
+                </button>
+
+                <!-- Customer Login / Profile -->
+                <button onclick="handleCustomerAuthBtn()" class="px-2.5 py-2 sm:px-3.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold text-xs sm:text-sm flex items-center gap-1.5 border border-brand-200/70 transition active:scale-95">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>
+                    </svg>
+                    <span id="header-customer-label" class="max-w-[78px] sm:max-w-none truncate">Login</span>
+                </button>
+
+                <!-- Owner Portal -->
+                <button onclick="handleOwnerNav()" class="px-2.5 py-2 sm:px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm transition active:scale-95">
+                    <svg class="w-4 h-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+                    </svg>
+                    <span>Owner</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="flex-1">
+
+        <!-- 1. CUSTOMER STOREFRONT VIEW -->
+        <section id="view-store" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+            <!-- Hero Section -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-brand-900 to-indigo-800 text-white p-6 sm:p-10 mb-8 shadow-xl shadow-indigo-950/15">
+                <div class="relative z-10 max-w-2xl">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-amber-300 mb-3 border border-white/10">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                        </svg>
+                        Read &amp; Listen Anywhere
+                    </span>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3 leading-tight">
+                        Read Inspiring Books &amp; Listen with Audio Narration
+                    </h2>
+                    <p class="text-indigo-100 text-sm sm:text-base mb-5 leading-relaxed">
+                        Unlock any book for ₹20 and enjoy full reading and Text-to-Speech audio access for 30 days.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2.5 text-xs sm:text-sm font-medium">
+                        <span class="inline-flex items-center gap-1.5 bg-white/10 px-3.5 py-2 rounded-xl">
+                            <svg class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            Instant Unlock After Payment
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 bg-white/10 px-3.5 py-2 rounded-xl">
+                            <svg class="w-4 h-4 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            30-Day Full Access
+                        </span>
+                    </div>
+                </div>
+                <div class="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-brand-500/20 blur-3xl pointer-events-none"></div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <span>Available E-Books</span>
+                        <span id="store-book-count" class="px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 text-xs font-bold">3</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Select a book to unlock reading and audio playback</p>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <div class="relative flex-1 sm:w-64">
+                        <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="store-search-input" oninput="renderStoreBooks()" placeholder="Search books..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <select id="store-filter-select" onchange="renderStoreBooks()" class="px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="all">All Books</option>
+                        <option value="unlocked">Unlocked</option>
+                        <option value="locked">Locked</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Books Grid -->
+            <div id="store-books-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+            <!-- Empty State -->
+            <div id="store-empty-state" class="hidden text-center py-16 bg-white rounded-3xl border border-slate-200/80">
+                <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                </div>
+                <h4 class="text-lg font-bold text-slate-800">No Books Found</h4>
+                <p class="text-sm text-slate-500 mt-1">Try adjusting your search or filter criteria.</p>
+            </div>
+        </section>
+
+        <!-- 2. OWNER LOGIN SCREEN -->
+        <section id="view-owner-login" class="hidden max-w-md mx-auto px-4 py-12 sm:py-16">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200/80">
+                <div class="w-14 h-14 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center mx-auto mb-5 shadow-md">
+                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-extrabold text-center text-slate-900">Owner Board Login</h2>
+                <p class="text-xs sm:text-sm text-center text-slate-500 mt-1 mb-6">
+                    Enter your Owner Gmail and Password to access the Admin Dashboard.
+                </p>
+
+                <form id="owner-login-form" onsubmit="submitOwnerLogin(event)" autocomplete="off" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Owner Gmail</label>
+                        <div class="relative">
+                            <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                            </svg>
+                            <input type="email" id="owner-login-email" required autocomplete="new-password" placeholder="Enter owner email..." class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Password</label>
+                        <div class="relative">
+                            <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>
+                            </svg>
+                            <input type="password" id="owner-login-pass" required autocomplete="new-password" placeholder="Enter password..." class="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                            <button type="button" onclick="togglePassEye()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1" title="Show/Hide Password">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="flex justify-end mt-2">
+                            <button type="button" onclick="openForgotPasswordModal()" class="text-xs font-bold text-brand-600 hover:text-brand-800 flex items-center gap-1 transition">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                <span>Forgot Password?</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="owner-login-err" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-semibold flex items-center gap-2">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <span>Invalid Gmail or Password. Please try again.</span>
+                    </div>
+
+                    <button type="submit" class="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-lg shadow-slate-900/20 transition active:scale-[0.99] flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        <span>Unlock Owner Dashboard</span>
+                    </button>
+                </form>
+
+                <button onclick="switchView('store')" class="w-full mt-4 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
+                    ← Back to Customer Storefront
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. OWNER DASHBOARD VIEW -->
+        <section id="view-owner-dashboard" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+            <!-- Dashboard Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm mb-6">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-xl font-extrabold text-slate-900">Owner Dashboard</h2>
+                            <span id="cloud-sync-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 inline-flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Fast Local Storage
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5 truncate">Signed in as <span class="font-semibold text-slate-700">Jayashankar9381@gmail.com</span></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5 shrink-0">
+                    <button onclick="switchView('store')" class="px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/>
+                        </svg>
+                        View Store
+                    </button>
+                    <button onclick="logoutOwner()" class="px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Owner Navigation Tabs -->
+            <div class="flex gap-2 overflow-x-auto pb-2 mb-6">
+                <button onclick="switchOwnerTab('upload')" id="owner-tab-btn-upload" class="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-slate-900 text-white shadow-sm whitespace-nowrap flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    Add Book
+                </button>
+                <button onclick="switchOwnerTab('manage')" id="owner-tab-btn-manage" class="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/>
+                    </svg>
+                    Manage Books (<span id="owner-manage-count">0</span>)
+                </button>
+                <button onclick="switchOwnerTab('settings')" id="owner-tab-btn-settings" class="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l-.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Cloud &amp; API Settings
+                </button>
+            </div>
+
+            <!-- TAB 1: ADD BOOK (Book Title, Book Text, UPI Link, Amount + Photo Upload Only) -->
+            <div id="owner-panel-upload" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white rounded-3xl p-5 sm:p-8 border border-slate-200/80 shadow-sm">
+                    <h3 class="text-lg font-extrabold text-slate-900">Create a New Book</h3>
+                    <p class="text-xs text-slate-500 mt-0.5 mb-6">Enter Book Title, Book Text, UPI Link, Amount, and Cover Photo to publish immediately.</p>
+
+                    <form id="book-upload-form" onsubmit="handlePublishBook(event)" class="space-y-5">
+                        <!-- 1. Book Title -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Book Title *</label>
+                            <input type="text" id="up-title" required placeholder="Enter book title..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                        </div>
+
+                        <!-- 2. Book Text -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Book Text *</label>
+                            <textarea id="up-text-content" rows="6" required placeholder="Enter book text here..." class="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600"></textarea>
+                        </div>
+
+                        <!-- 3. UPI Link & 4. Amount -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">UPI Link *</label>
+                                <input type="text" id="up-paylink" required placeholder="upi://pay?pa=yourupi@bank&pn=LibraryBook&am=20&cu=INR" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Amount (₹ • 30 Days Access) *</label>
+                                <div class="relative">
+                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-500">₹</span>
+                                    <input type="number" id="up-price" value="20" min="1" required class="w-full pl-8 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Cover Photo Upload Only -->
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                            <label for="up-cover-file" class="block text-xs font-bold text-slate-700">Cover Photo Upload</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                                <img id="up-cover-preview" src="https://placehold.co/120x160/4f46e5/ffffff?text=Cover" alt="Cover Preview" class="w-20 h-28 object-cover rounded-xl border border-slate-200 bg-white shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <input type="file" id="up-cover-file" accept="image/*" onchange="previewUploadedCover(event)" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                                    <p class="text-[11px] text-slate-500 mt-1.5">Upload a book cover photo (JPG, PNG, WebP). Syncs to Firebase Storage &amp; Firestore when connected.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="publish-btn" class="w-full py-4 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 text-white font-bold text-sm sm:text-base shadow-lg shadow-brand-600/25 transition active:scale-[0.99] flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                            </svg>
+                            <span>Publish Book Now</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Sidebar Info -->
+                <div class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 flex flex-col justify-between">
+                    <div>
+                        <span class="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold">Quick Info</span>
+                        <h4 class="text-lg font-extrabold mt-3 mb-4">Instant Book &amp; Audio</h4>
+                        <ul class="space-y-3.5 text-xs sm:text-sm text-slate-300">
+                            <li class="flex items-start gap-2.5">
+                                <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                                <span><strong>Read &amp; Audio:</strong> Every published book text can be read on screen or played aloud via Text-to-Speech.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                                <span><strong>Strict Lock:</strong> Customers unlock reading and audio only after completing payment.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                                <span><strong>30-Day Access:</strong> Unlocked access remains active for 30 days.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="mt-6 p-4 rounded-2xl bg-white/10 border border-white/10 text-xs text-indigo-200 flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                        </svg>
+                        <span>Deleting a book removes its Firestore record and Storage cover image automatically.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: MANAGE BOOKS -->
+            <div id="owner-panel-manage" class="hidden bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm">
+                <div class="mb-5">
+                    <h3 class="text-lg font-extrabold text-slate-900">Manage Published Books</h3>
+                    <p class="text-xs text-slate-500">Delete any book to remove it from the storefront, local storage, and Firebase (Firestore &amp; Storage).</p>
+                </div>
+                <div id="owner-books-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- TAB 3: CLOUD & API SETTINGS -->
+            <div id="owner-panel-settings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Firebase Cloud Config -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm min-w-0">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Firebase Cloud Sync</h3>
+                            <p class="text-xs text-slate-500">Sync &amp; delete books/covers in Firestore &amp; Storage</p>
+                        </div>
+                    </div>
+                    <textarea id="cfg-firebase" rows="5" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}' class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600 mb-3"></textarea>
+                    <button onclick="saveFirebaseSettings()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs sm:text-sm transition">
+                        Connect &amp; Save Firebase
+                    </button>
+                </div>
+
+                <!-- Razorpay Payment API -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm min-w-0">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Razorpay Payment Gateway</h3>
+                            <p class="text-xs text-slate-500">Razorpay Key ID for automatic PhonePe / UPI unlock</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Razorpay Key ID</label>
+                            <input type="text" id="cfg-razorpay-key" placeholder="rzp_live_xxxxxxxxxxxxxx" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Store Display Name</label>
+                            <input type="text" id="cfg-merchant-name" value="Library book" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                        </div>
+                    </div>
+                    <button onclick="saveRazorpaySettings()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm transition">
+                        Save Payment Settings
+                    </button>
+                </div>
+
+                <!-- EmailJS Gmail OTP Config -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm min-w-0">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><path d="m16 19 2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">EmailJS Gmail OTP Setup</h3>
+                            <p class="text-xs text-slate-500">Send OTP emails to Jayashankar9381@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
+                        <input type="text" id="cfg-ejs-service" placeholder="Service ID" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono">
+                        <input type="text" id="cfg-ejs-template" placeholder="Template ID" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono">
+                        <input type="text" id="cfg-ejs-pubkey" placeholder="Public Key" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono">
+                    </div>
+                    <button onclick="saveEmailJsSettings()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition">
+                        Save EmailJS Keys
+                    </button>
+                </div>
+
+                <!-- Direct Change Owner Password (Clean stacked mobile-safe layout) -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm min-w-0">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Change Owner Password</h3>
+                            <p class="text-xs text-slate-500">Update your admin dashboard login password directly</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2.5">
+                        <input type="text" id="cfg-new-owner-pass" placeholder="Enter new password..." class="w-full flex-1 min-w-0 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-600">
+                        <button onclick="updateOwnerPasswordDirect()" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm transition shrink-0 text-center">
+                            Update Password
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- ==================== MODAL: FORGOT PASSWORD (STRICT GMAIL OTP GATE) ==================== -->
+    <div id="modal-forgot-password" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+            <button onclick="closeModal('modal-forgot-password')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-900">Forgot Password</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 mb-5">
+                Enter your Owner Gmail to send a 6-digit OTP to your inbox. Password reset stays locked until you enter the matching OTP.
+            </p>
+
+            <!-- Step 1: Send OTP to Gmail -->
+            <form id="otp-request-form" onsubmit="sendOwnerOtp(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Owner Gmail</label>
+                    <input type="email" id="otp-email-input" required placeholder="Jayashankar9381@gmail.com" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                </div>
+                <button type="submit" id="send-otp-btn" class="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-600/25 transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                    <span>Send OTP to Gmail</span>
+                </button>
+            </form>
+
+            <!-- Step 2: Enter OTP (Shown only after OTP is dispatched; no OTP code is ever shown on screen) -->
+            <div id="otp-step-container" class="hidden mt-5 pt-5 border-t border-slate-200 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Enter 6-Digit Gmail OTP</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="otp-code-input" maxlength="6" pattern="[0-9]{6}" placeholder="••••••" class="flex-1 min-w-0 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base font-mono font-bold tracking-widest text-center focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                        <button type="button" onclick="verifyOtpOnly()" class="px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shrink-0 transition">
+                            Verify OTP
+                        </button>
+                    </div>
+                    <p id="otp-status-msg" class="text-xs text-slate-500 mt-1.5"></p>
+                </div>
+
+                <!-- Step 3: Password Reset Form (Strictly locked until OTP matches) -->
+                <form id="otp-reset-password-form" onsubmit="completePasswordReset(event)" class="hidden space-y-4 pt-3 border-t border-emerald-200">
+                    <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+                        </svg>
+                        <span>OTP verified. Set your new password below.</span>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">New Password</label>
+                        <input type="password" id="otp-new-pass-input" required minlength="4" placeholder="Enter new password..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    </div>
+                    <button type="submit" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition">
+                        Save New Password
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: SOCIAL SHARE ==================== -->
+    <div id="modal-share" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative">
+            <button onclick="closeModal('modal-share')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center mb-3">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+            </div>
+            <h3 id="share-modal-title" class="text-xl font-extrabold text-slate-900">Share</h3>
+            <p id="share-modal-desc" class="text-xs sm:text-sm text-slate-500 mt-1 mb-5 line-clamp-2">Share with friends and family</p>
+
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <button onclick="triggerSocialShare('whatsapp')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-slate-900 font-bold text-sm transition active:scale-95">
+                    <span class="w-9 h-9 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                        </svg>
+                    </span>
+                    <span>WhatsApp</span>
+                </button>
+
+                <button onclick="triggerSocialShare('facebook')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/30 text-slate-900 font-bold text-sm transition active:scale-95">
+                    <span class="w-9 h-9 rounded-xl bg-[#1877F2] text-white flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                        </svg>
+                    </span>
+                    <span>Facebook</span>
+                </button>
+
+                <button onclick="triggerSocialShare('twitter')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/5 hover:bg-slate-900/10 border border-slate-300 text-slate-900 font-bold text-sm transition active:scale-95">
+                    <span class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </span>
+                    <span>Twitter (X)</span>
+                </button>
+
+                <button onclick="triggerSocialShare('instagram')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-pink-500/10 hover:bg-pink-500/20 border border-pink-300 text-slate-900 font-bold text-sm transition active:scale-95">
+                    <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                        </svg>
+                    </span>
+                    <span>Instagram</span>
+                </button>
+            </div>
+
+            <div class="p-2.5 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between gap-2">
+                <input type="text" id="share-link-input" readonly class="bg-transparent text-xs text-slate-600 font-mono w-full px-2 focus:outline-none">
+                <button onclick="copyShareLink()" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shrink-0 flex items-center gap-1 transition active:scale-95">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                    </svg>
+                    Copy Link
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: CUSTOMER LOGIN ==================== -->
+    <div id="modal-customer-login" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+            <button onclick="closeModal('modal-customer-login')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-900">Customer Sign In</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 mb-5">
+                Sign in with your Mobile Number or Gmail to keep your unlocked books active for 30 days.
+            </p>
+
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+                <button type="button" id="cust-method-mobile" onclick="setCustLoginMethod('mobile')" class="py-2 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition">
+                    Mobile Number
+                </button>
+                <button type="button" id="cust-method-gmail" onclick="setCustLoginMethod('gmail')" class="py-2 rounded-lg text-xs font-bold text-slate-600 transition">
+                    Gmail Address
+                </button>
+            </div>
+
+            <form onsubmit="submitCustomerLogin(event)" class="space-y-4">
+                <div id="cust-field-mobile">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">10-Digit Mobile Number</label>
+                    <div class="flex">
+                        <span class="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-slate-200 bg-slate-50 text-slate-600 text-sm font-bold">+91</span>
+                        <input type="tel" id="cust-input-mobile" maxlength="10" placeholder="9876543210" class="w-full px-4 py-3 rounded-r-xl bg-slate-50 border border-slate-200 text-sm font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                    </div>
+                </div>
+
+                <div id="cust-field-gmail" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Gmail Address</label>
+                    <input type="email" id="cust-input-gmail" placeholder="you@gmail.com" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                    <input type="text" id="cust-input-name" required placeholder="Enter your name..." class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600">
+                </div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-600/25 transition">
+                    Continue →
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: STRICT PAYMENT CHECKOUT ==================== -->
+    <div id="modal-checkout" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative">
+            <button onclick="closeModal('modal-checkout')" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <div class="flex items-center gap-4 mb-5">
+                <img id="chk-cover" src="" alt="Cover" class="w-16 h-22 object-cover rounded-xl shadow-md border border-slate-200 shrink-0">
+                <div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold inline-flex items-center gap-1">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Locked Book
+                    </span>
+                    <h3 id="chk-title" class="text-lg font-extrabold text-slate-900 mt-1 line-clamp-2">Book Title</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Full Reading + Audio Narration</p>
+                </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 mb-5 space-y-2.5">
+                <div class="flex justify-between text-xs sm:text-sm">
+                    <span class="text-slate-600">Access Validity:</span>
+                    <span class="font-bold text-emerald-600">30 Days</span>
+                </div>
+                <div class="flex justify-between text-xs sm:text-sm">
+                    <span class="text-slate-600">Account:</span>
+                    <span id="chk-account" class="font-semibold text-slate-800 truncate max-w-[180px]">User</span>
+                </div>
+                <div class="border-t border-slate-200 pt-2.5 flex justify-between items-center">
+                    <span class="font-bold text-slate-900">Amount:</span>
+                    <span id="chk-price" class="text-2xl font-extrabold text-brand-600">₹20</span>
+                </div>
+            </div>
+
+            <!-- UPI Link Button (if set by Owner) -->
+            <a id="chk-upi-link" href="#" onclick="handleUpiLinkClick(event)" class="hidden w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 text-white font-bold text-sm shadow-lg shadow-brand-600/25 transition flex items-center justify-center gap-2 mb-3">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                </svg>
+                <span>Pay via PhonePe / UPI Link</span>
+            </a>
+
+            <!-- Razorpay Checkout Button -->
+            <button onclick="startRazorpayCheckout()" class="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-lg shadow-slate-900/20 transition flex items-center justify-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span>Pay via Razorpay / UPI / PhonePe</span>
+            </button>
+
+            <p class="text-[11px] text-center text-slate-500 mt-3 leading-relaxed">
+                Book &amp; Audio unlock automatically for 30 days only after verified PhonePe / UPI / Razorpay payment completes.
+            </p>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: E-BOOK READER & AUDIO PLAYER ==================== -->
+    <div id="modal-reader" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col">
+
+        <!-- Clean Top Bar -->
+        <div class="bg-slate-900 text-white px-4 sm:px-6 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <button onclick="closeReader()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 shrink-0" title="Back">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                </button>
+                <h3 id="rdr-title" class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-2">Book Title</h3>
+            </div>
+
+            <!-- Read / Audio Mode Toggle -->
+            <div class="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl shrink-0 ml-auto">
+                <button id="rdr-btn-read" onclick="setReaderTab('read')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white flex items-center gap-1.5 transition">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                    Read Book
+                </button>
+                <button id="rdr-btn-audio" onclick="setReaderTab('audio')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                    </svg>
+                    Listen Audio
+                </button>
+            </div>
+        </div>
+
+        <!-- Reader Body -->
+        <div class="flex-1 overflow-y-auto bg-[#faf8f5] text-slate-900">
+
+            <!-- READ TAB -->
+            <div id="rdr-panel-read" class="max-w-3xl mx-auto px-5 sm:px-10 py-8 sm:py-10">
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm mb-6">
+                    <span class="text-xs font-bold text-slate-500">Text Size:</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="adjustFontSize(-2)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-xs">A-</button>
+                        <button onclick="adjustFontSize(2)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-xs">A+</button>
+                        <button onclick="setReaderTab('audio'); playSpeech(ttsCharOffset);" class="ml-2 px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 font-bold text-xs hover:bg-brand-100 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            Listen Audio
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Formatted Book Text -->
+                <article id="rdr-text-body" class="prose max-w-none leading-relaxed text-slate-800 whitespace-pre-line font-medium bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/70 shadow-sm" style="font-size: 18px;"></article>
+            </div>
+
+            <!-- AUDIO (TTS) TAB -->
+            <div id="rdr-panel-audio" class="hidden max-w-xl mx-auto px-5 py-10 flex flex-col items-center text-center">
+                <div class="relative mb-6">
+                    <div id="tts-ring" class="hidden absolute -inset-3 rounded-3xl bg-brand-500/20 audio-pulse"></div>
+                    <img id="audio-cover" src="" alt="Cover" class="relative w-44 h-60 object-cover rounded-2xl shadow-2xl border-4 border-white">
+                </div>
+
+                <span class="px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-bold mb-2 inline-flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>
+                    </svg>
+                    Text-to-Speech Audio
+                </span>
+                <h4 id="audio-title" class="text-xl font-extrabold text-slate-900 mb-1">Book Title</h4>
+                <p id="tts-status" class="text-xs font-semibold text-slate-500 mb-6">Press Play to start listening</p>
+
+                <!-- Voice & Speed Selectors -->
+                <div class="w-full grid grid-cols-2 gap-3 mb-6">
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 text-left">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Voice</label>
+                        <select id="tts-voice" onchange="restartSpeechIfActive()" class="w-full text-xs font-bold text-slate-800 bg-transparent focus:outline-none">
+                            <option value="auto">Auto (English / Telugu)</option>
+                        </select>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-slate-200 text-left">
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Speed</label>
+                        <select id="tts-speed" onchange="restartSpeechIfActive()" class="w-full text-xs font-bold text-slate-800 bg-transparent focus:outline-none">
+                            <option value="0.75">0.75x (Slow)</option>
+                            <option value="1" selected>1.0x (Normal)</option>
+                            <option value="1.25">1.25x (Fast)</option>
+                            <option value="1.5">1.5x (Very Fast)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Transport Controls (-10s, Stop, Play/Pause, +10s, Read) -->
+                <div class="flex items-center justify-center gap-2 sm:gap-3.5">
+                    <button onclick="skipSpeechSeconds(-10)" class="px-3 h-12 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1 shadow-sm transition active:scale-95" title="Rewind 10 seconds">
+                        <svg class="w-4 h-4 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                        </svg>
+                        <span>-10s</span>
+                    </button>
+
+                    <button onclick="stopSpeech()" class="w-11 h-11 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition active:scale-95" title="Stop">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="5" y="5" width="14" height="14" rx="2"/>
+                        </svg>
+                    </button>
+
+                    <button onclick="toggleSpeech()" class="w-16 h-16 rounded-full bg-gradient-to-r from-brand-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 text-white shadow-xl shadow-brand-600/30 flex items-center justify-center transition active:scale-95" title="Play / Pause">
+                        <span id="tts-play-icon-wrap" class="flex items-center justify-center">
+                            <svg class="w-7 h-7 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                        </span>
+                    </button>
+
+                    <button onclick="skipSpeechSeconds(10)" class="px-3 h-12 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1 shadow-sm transition active:scale-95" title="Forward 10 seconds">
+                        <span>+10s</span>
+                        <svg class="w-4 h-4 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+                        </svg>
+                    </button>
+
+                    <button onclick="setReaderTab('read')" class="w-11 h-11 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition active:scale-95" title="Read Text">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Live Transcript Progress -->
+                <div class="w-full mt-8 p-4 rounded-2xl bg-white border border-slate-200/80 text-left shadow-sm">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-brand-600">Audio Progress</span>
+                        <span id="tts-percent" class="text-[10px] font-bold text-slate-400">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3">
+                        <div id="tts-progress-bar" class="h-full bg-brand-600 transition-all duration-200" style="width: 0%"></div>
+                    </div>
+                    <p id="tts-live-text" class="text-xs sm:text-sm text-slate-700 line-clamp-3 leading-relaxed">
+                        Click Play above to listen to the book audio...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200/80 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>© 2026 Library book — E-Books &amp; Audio Library. All rights reserved.</p>
+            <div class="flex items-center gap-4">
+                <button onclick="openShareAppModal()" class="hover:text-brand-600 font-semibold transition">Share Website</button>
+                <span>•</span>
+                <button onclick="handleOwnerNav()" class="hover:text-slate-900 font-semibold transition">Owner Login</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== APPLICATION JAVASCRIPT ==================== -->
+    <script>
+        // Constants
+        const OWNER_EMAIL = "jayashankar9381@gmail.com";
+        const DEFAULT_OWNER_PASS = "938119";
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        const DEFAULT_COVER_PHOTO = "https://placehold.co/360x480/4f46e5/ffffff?text=Library+book";
+
+        // 3 Starter Books
+        const SAMPLE_BOOKS = [
+            {
+                id: "book_sample_1",
+                title: "Atomic Habits: Tiny Changes, Remarkable Results",
+                price: 20,
+                coverUrl: "https://placehold.co/360x480/312e81/ffffff?text=Atomic+Habits",
+                coverStoragePath: "",
+                upiLink: "",
+                createdAt: Date.now() - 259200000,
+                content: `Chapter 1: The Surprising Power of Atomic Habits\n\nSuccess is the product of daily habits—not once-in-a-lifetime transformations. If you can get just 1 percent better each day for one year, you will end up thirty-seven times better by the time you are done.\n\nChapter 2: How Your Habits Shape Your Identity\n\nTrue behavior change is identity change. Every action you take is a vote for the type of person you wish to become. Small wins compound into extraordinary results over time.`
+            },
+            {
+                id: "book_sample_2",
+                title: "The Psychology of Money & Wealth",
+                price: 20,
+                coverUrl: "https://placehold.co/360x480/0f766e/ffffff?text=Psychology+of+Money",
+                coverStoragePath: "",
+                upiLink: "",
+                createdAt: Date.now() - 172800000,
+                content: `Chapter 1: No One is Crazy\n\nYour personal experiences with money make up maybe a tiny fraction of what has happened in the world, yet shape most of how you think the world works.\n\nChapter 2: Enough & Compounding\n\nTrue wealth is what you do not see—the freedom to control your own time every single day. Good investing is not necessarily about making the highest returns, it is about earning good returns that you can stick with for the longest period of time.`
+            },
+            {
+                id: "book_sample_3",
+                title: "Deep Work: Rules for Focused Success",
+                price: 20,
+                coverUrl: "https://placehold.co/360x480/b45309/ffffff?text=Deep+Work",
+                coverStoragePath: "",
+                upiLink: "",
+                createdAt: Date.now() - 86400000,
+                content: `Chapter 1: Deep Work is Valuable\n\nDeep work is the ability to focus without distraction on a cognitively demanding task. It is a skill that allows you to quickly master complicated information and produce better results in less time.\n\nChapter 2: Embrace Boredom & Quit Distractions\n\nTo succeed with deep work, you must rewire your brain to be comfortable resisting distracting stimuli and schedule dedicated blocks of uninterrupted focus every day.`
+            }
+        ];
+
+        // Global App State
+        let appState = {
+            books: [...SAMPLE_BOOKS],
+            customer: null,
+            purchases: {},
+            isOwnerAuth: false,
+            ownerPassword: DEFAULT_OWNER_PASS,
+            pendingOtp: null,
+            otpVerifiedForReset: false,
+            activeCheckoutBookId: null,
+            activeReaderBook: null,
+            uploadedCoverFile: null,
+            uploadedCoverDataUrl: null,
+            sharePayload: { title: "", text: "", url: "" },
+            settings: {
+                firebaseConfig: null,
+                razorpayKey: "",
+                merchantName: "Library book",
+                ejsServiceId: "",
+                ejsTemplateId: "",
+                ejsPublicKey: ""
+            }
+        };
+
+        let firestoreDb = null;
+        let firebaseStorage = null;
+        let firestoreUnsubscribe = null;
+
+        // ==================== INITIALIZATION ====================
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            initFirebaseIfConfigured();
+            renderStoreBooks();
+            updateHeaderCustomerUI();
+            loadSpeechVoices();
+
+            const params = new URLSearchParams(window.location.search);
+            const sharedBookId = params.get('book');
+            if (sharedBookId) {
+                setTimeout(() => onBookCardClick(sharedBookId), 300);
+            }
+        });
+
+        function loadFromLocalStorage() {
+            try {
+                const storedBooks = localStorage.getItem('sb_books');
+                if (storedBooks) {
+                    const parsedBooks = JSON.parse(storedBooks);
+                    appState.books = (Array.isArray(parsedBooks) && parsedBooks.length > 0)
+                        ? parsedBooks
+                        : [...SAMPLE_BOOKS];
+                } else {
+                    appState.books = [...SAMPLE_BOOKS];
+                }
+
+                const storedCustomer = localStorage.getItem('sb_customer');
+                if (storedCustomer) appState.customer = JSON.parse(storedCustomer);
+
+                const storedPurchases = localStorage.getItem('sb_purchases');
+                if (storedPurchases) appState.purchases = JSON.parse(storedPurchases);
+
+                const storedOwnerPass = localStorage.getItem('sb_owner_pass');
+                if (storedOwnerPass) appState.ownerPassword = storedOwnerPass;
+
+                const storedSettings = localStorage.getItem('sb_settings');
+                if (storedSettings) {
+                    appState.settings = { ...appState.settings, ...JSON.parse(storedSettings) };
+                    document.getElementById('cfg-razorpay-key').value = appState.settings.razorpayKey || '';
+                    document.getElementById('cfg-merchant-name').value = appState.settings.merchantName || 'Library book';
+                    document.getElementById('cfg-ejs-service').value = appState.settings.ejsServiceId || '';
+                    document.getElementById('cfg-ejs-template').value = appState.settings.ejsTemplateId || '';
+                    document.getElementById('cfg-ejs-pubkey').value = appState.settings.ejsPublicKey || '';
+                    if (appState.settings.firebaseConfig) {
+                        document.getElementById('cfg-firebase').value = JSON.stringify(appState.settings.firebaseConfig, null, 2);
+                    }
+                }
+            } catch (err) {
+                console.error("Local load error:", err);
+                appState.books = [...SAMPLE_BOOKS];
+            }
+        }
+
+        function persistBooksLocal() {
+            try {
+                localStorage.setItem('sb_books', JSON.stringify(appState.books));
+            } catch (e) {
+                showToast("Local storage limit reached. Configure Firebase Cloud in Settings.", "error");
+            }
+        }
+
+        function persistPurchasesLocal() {
+            localStorage.setItem('sb_purchases', JSON.stringify(appState.purchases));
+        }
+
+        // ==================== FIREBASE FIRESTORE & STORAGE SYNC ====================
+        function initFirebaseIfConfigured() {
+            const cfg = appState.settings.firebaseConfig;
+            if (!cfg || !cfg.apiKey) return;
+
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(cfg);
+                }
+                firestoreDb = firebase.firestore();
+                firebaseStorage = typeof firebase.storage === 'function' ? firebase.storage() : null;
+
+                if (typeof firestoreUnsubscribe === 'function') {
+                    firestoreUnsubscribe();
+                }
+
+                // Two-way real-time listener so additions and deletions in Firestore reflect immediately
+                firestoreUnsubscribe = firestoreDb.collection('swarabooks_catalog').onSnapshot((snapshot) => {
+                    const cloudBooks = [];
+                    snapshot.forEach(doc => cloudBooks.push({ id: doc.id, ...doc.data() }));
+                    cloudBooks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                    appState.books = cloudBooks;
+                    persistBooksLocal();
+                    renderStoreBooks();
+                    if (appState.isOwnerAuth) renderOwnerManageBooks();
+                }, (err) => {
+                    console.warn("Firestore sync warning:", err.message);
+                });
+
+                const badge = document.getElementById('cloud-sync-badge');
+                if (badge) {
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Firebase Cloud Connected`;
+                }
+            } catch (err) {
+                console.warn("Firebase init skipped:", err);
+            }
+        }
+
+        async function deleteBookFromFirebase(book) {
+            if (!firestoreDb) return { firestoreDeleted: false, storageDeleted: false };
+
+            let firestoreDeleted = false;
+            let storageDeleted = false;
+
+            try {
+                await firestoreDb.collection('swarabooks_catalog').doc(book.id).delete();
+                firestoreDeleted = true;
+            } catch (err) {
+                console.warn("Firestore delete error:", err);
+            }
+
+            if (firebaseStorage) {
+                try {
+                    const storagePath = book.coverStoragePath || `book_covers/${book.id}`;
+                    const fileRef = firebaseStorage.ref().child(storagePath);
+                    await fileRef.delete();
+                    storageDeleted = true;
+                } catch (err) {
+                    // Ignore object-not-found errors if the book had no uploaded Storage file
+                    if (err && err.code !== 'storage/object-not-found') {
+                        console.warn("Firebase Storage delete warning:", err);
+                    }
+                }
+            }
+
+            return { firestoreDeleted, storageDeleted };
+        }
+
+        window.saveFirebaseSettings = () => {
+            const raw = document.getElementById('cfg-firebase').value.trim();
+            if (!raw) {
+                showToast("Please paste your Firebase Config JSON.", "error");
+                return;
+            }
+            try {
+                const parsed = JSON.parse(raw);
+                if (!parsed.apiKey || !parsed.projectId) throw new Error("Missing keys");
+                appState.settings.firebaseConfig = parsed;
+                localStorage.setItem('sb_settings', JSON.stringify(appState.settings));
+                initFirebaseIfConfigured();
+                showToast("Firebase Cloud (Firestore & Storage) connected!", "success");
+            } catch (e) {
+                showToast("Invalid JSON format. Check your Firebase config.", "error");
+            }
+        };
+
+        window.saveRazorpaySettings = () => {
+            appState.settings.razorpayKey = document.getElementById('cfg-razorpay-key').value.trim();
+            appState.settings.merchantName = document.getElementById('cfg-merchant-name').value.trim() || "Library book";
+            localStorage.setItem('sb_settings', JSON.stringify(appState.settings));
+            showToast("Razorpay settings saved!", "success");
+        };
+
+        window.saveEmailJsSettings = () => {
+            appState.settings.ejsServiceId = document.getElementById('cfg-ejs-service').value.trim();
+            appState.settings.ejsTemplateId = document.getElementById('cfg-ejs-template').value.trim();
+            appState.settings.ejsPublicKey = document.getElementById('cfg-ejs-pubkey').value.trim();
+            localStorage.setItem('sb_settings', JSON.stringify(appState.settings));
+            showToast("EmailJS OTP settings saved!", "success");
+        };
+
+        window.updateOwnerPasswordDirect = () => {
+            const newPass = document.getElementById('cfg-new-owner-pass').value.trim();
+            if (newPass.length < 4) {
+                showToast("Password must be at least 4 characters.", "error");
+                return;
+            }
+            appState.ownerPassword = newPass;
+            localStorage.setItem('sb_owner_pass', newPass);
+            document.getElementById('cfg-new-owner-pass').value = '';
+            showToast("Owner password updated!", "success");
+        };
+
+        // ==================== VIEW NAVIGATION & OWNER AUTH ====================
+        window.switchView = (viewName) => {
+            document.getElementById('view-store').classList.add('hidden');
+            document.getElementById('view-owner-login').classList.add('hidden');
+            document.getElementById('view-owner-dashboard').classList.add('hidden');
+
+            if (viewName === 'store') {
+                document.getElementById('view-store').classList.remove('hidden');
+                renderStoreBooks();
+            } else if (viewName === 'owner-login') {
+                document.getElementById('owner-login-email').value = '';
+                document.getElementById('owner-login-pass').value = '';
+                document.getElementById('owner-login-err').classList.add('hidden');
+                document.getElementById('view-owner-login').classList.remove('hidden');
+            } else if (viewName === 'owner-dashboard') {
+                if (!appState.isOwnerAuth) {
+                    switchView('owner-login');
+                    return;
+                }
+                document.getElementById('view-owner-dashboard').classList.remove('hidden');
+                renderOwnerManageBooks();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.handleOwnerNav = () => {
+            if (appState.isOwnerAuth) {
+                switchView('owner-dashboard');
+            } else {
+                switchView('owner-login');
+            }
+        };
+
+        window.togglePassEye = () => {
+            const input = document.getElementById('owner-login-pass');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        };
+
+        window.submitOwnerLogin = (e) => {
+            e.preventDefault();
+            const email = document.getElementById('owner-login-email').value.trim().toLowerCase();
+            const pass = document.getElementById('owner-login-pass').value.trim();
+
+            if (email === OWNER_EMAIL && pass === appState.ownerPassword) {
+                appState.isOwnerAuth = true;
+                document.getElementById('owner-login-err').classList.add('hidden');
+                document.getElementById('owner-login-email').value = '';
+                document.getElementById('owner-login-pass').value = '';
+                showToast("Owner Dashboard unlocked.", "success");
+                switchView('owner-dashboard');
+            } else {
+                document.getElementById('owner-login-err').classList.remove('hidden');
+                showToast("Incorrect Gmail or Password.", "error");
+            }
+        };
+
+        window.logoutOwner = () => {
+            appState.isOwnerAuth = false;
+            showToast("Logged out of Owner Board.", "info");
+            switchView('store');
+        };
+
+        window.switchOwnerTab = (tab) => {
+            ['upload', 'manage', 'settings'].forEach(t => {
+                document.getElementById(`owner-panel-${t}`).classList.add('hidden');
+                document.getElementById(`owner-tab-btn-${t}`).className = "px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 whitespace-nowrap flex items-center gap-1.5 transition";
+            });
+            document.getElementById(`owner-panel-${tab}`).classList.remove('hidden');
+            document.getElementById(`owner-tab-btn-${tab}`).className = "px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-slate-900 text-white shadow-sm whitespace-nowrap flex items-center gap-1.5 transition";
+
+            if (tab === 'manage') renderOwnerManageBooks();
+        };
+
+        // ==================== FORGOT PASSWORD (STRICT GMAIL OTP GATE) ====================
+        window.openForgotPasswordModal = () => {
+            appState.pendingOtp = null;
+            appState.otpVerifiedForReset = false;
+
+            document.getElementById('otp-email-input').value = '';
+            document.getElementById('otp-code-input').value = '';
+            document.getElementById('otp-new-pass-input').value = '';
+            document.getElementById('otp-status-msg').textContent = '';
+
+            document.getElementById('otp-step-container').classList.add('hidden');
+            document.getElementById('otp-reset-password-form').classList.add('hidden');
+
+            document.getElementById('modal-forgot-password').classList.remove('hidden');
+        };
+
+        window.sendOwnerOtp = async (e) => {
+            e.preventDefault();
+            const enteredEmail = document.getElementById('otp-email-input').value.trim().toLowerCase();
+
+            if (enteredEmail !== OWNER_EMAIL) {
+                showToast("This Gmail does not match the Owner account.", "error");
+                return;
+            }
+
+            const { ejsServiceId, ejsTemplateId, ejsPublicKey } = appState.settings;
+            if (!ejsServiceId || !ejsTemplateId || !ejsPublicKey || !window.emailjs) {
+                showToast("Configure EmailJS keys in Owner Cloud & API Settings to send Gmail OTP.", "error");
+                return;
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const sendBtn = document.getElementById('send-otp-btn');
+            sendBtn.disabled = true;
+
+            try {
+                emailjs.init(ejsPublicKey);
+                await emailjs.send(ejsServiceId, ejsTemplateId, {
+                    to_email: OWNER_EMAIL,
+                    otp_code: otp,
+                    app_name: "Library book"
+                });
+
+                appState.pendingOtp = otp;
+                appState.otpVerifiedForReset = false;
+
+                document.getElementById('otp-step-container').classList.remove('hidden');
+                document.getElementById('otp-reset-password-form').classList.add('hidden');
+                document.getElementById('otp-status-msg').textContent = "OTP sent to Gmail. Enter the 6-digit code from your inbox to unlock password reset.";
+                showToast("OTP sent to your Gmail.", "success");
+            } catch (err) {
+                console.error("Failed to send Gmail OTP:", err);
+                showToast("Could not send OTP to Gmail. Check EmailJS settings.", "error");
+            } finally {
+                sendBtn.disabled = false;
+            }
+        };
+
+        window.verifyOtpOnly = () => {
+            const enteredOtp = document.getElementById('otp-code-input').value.trim();
+
+            if (!appState.pendingOtp) {
+                showToast("Please send OTP to Gmail first.", "error");
+                return;
+            }
+
+            if (enteredOtp !== appState.pendingOtp) {
+                appState.otpVerifiedForReset = false;
+                document.getElementById('otp-reset-password-form').classList.add('hidden');
+                document.getElementById('otp-status-msg').textContent = "Incorrect OTP. Password reset remains locked.";
+                showToast("Incorrect OTP. Please try again.", "error");
+                return;
+            }
+
+            appState.otpVerifiedForReset = true;
+            document.getElementById('otp-status-msg').textContent = "OTP matched.";
+            document.getElementById('otp-reset-password-form').classList.remove('hidden');
+            showToast("OTP verified! You can now set a new password.", "success");
+        };
+
+        window.completePasswordReset = (e) => {
+            e.preventDefault();
+            if (!appState.pendingOtp || !appState.otpVerifiedForReset) {
+                showToast("OTP verification is required before changing password.", "error");
+                return;
+            }
+
+            const newPass = document.getElementById('otp-new-pass-input').value.trim();
+            if (newPass.length < 4) {
+                showToast("Password must be at least 4 characters.", "error");
+                return;
+            }
+
+            appState.ownerPassword = newPass;
+            localStorage.setItem('sb_owner_pass', newPass);
+            appState.pendingOtp = null;
+            appState.otpVerifiedForReset = false;
+
+            closeModal('modal-forgot-password');
+            showToast("Password updated. Log in with your new password.", "success");
+        };
+
+        // ==================== BOOK CREATION (PHOTO UPLOAD ONLY) & FIREBASE DELETION ====================
+        function readImageFileCompressed(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxW = 480;
+                        const scale = Math.min(1, maxW / img.width);
+                        canvas.width = Math.round(img.width * scale);
+                        canvas.height = Math.round(img.height * scale);
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = ev.target.result;
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.previewUploadedCover = async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) {
+                appState.uploadedCoverFile = null;
+                appState.uploadedCoverDataUrl = null;
+                document.getElementById('up-cover-preview').src = DEFAULT_COVER_PHOTO;
+                return;
+            }
+            appState.uploadedCoverFile = file;
+            const compressed = await readImageFileCompressed(file);
+            if (compressed) {
+                appState.uploadedCoverDataUrl = compressed;
+                document.getElementById('up-cover-preview').src = compressed;
+            }
+        };
+
+        window.handlePublishBook = async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('up-title').value.trim();
+            const content = document.getElementById('up-text-content').value.trim();
+            const upiLink = document.getElementById('up-paylink').value.trim();
+            const price = Number(document.getElementById('up-price').value) || 20;
+            const coverFileInput = document.getElementById('up-cover-file');
+
+            const publishBtn = document.getElementById('publish-btn');
+            publishBtn.disabled = true;
+
+            const bookId = "book_" + Date.now();
+            let coverUrl = appState.uploadedCoverDataUrl || DEFAULT_COVER_PHOTO;
+            let coverStoragePath = "";
+
+            const selectedFile = appState.uploadedCoverFile || (coverFileInput && coverFileInput.files && coverFileInput.files[0]) || null;
+
+            if (!appState.uploadedCoverDataUrl && selectedFile) {
+                const uploadedDataUrl = await readImageFileCompressed(selectedFile);
+                if (uploadedDataUrl) coverUrl = uploadedDataUrl;
+            }
+
+            if (firebaseStorage && selectedFile) {
+                try {
+                    coverStoragePath = `book_covers/${bookId}`;
+                    const storageRef = firebaseStorage.ref().child(coverStoragePath);
+                    await storageRef.put(selectedFile);
+                    coverUrl = await storageRef.getDownloadURL();
+                } catch (err) {
+                    console.warn("Firebase Storage upload fallback to local/data URL:", err);
+                    coverStoragePath = "";
+                }
+            }
+
+            const newBook = {
+                id: bookId,
+                title,
+                content,
+                upiLink,
+                price,
+                coverUrl,
+                coverStoragePath,
+                createdAt: Date.now()
+            };
+
+            appState.books.unshift(newBook);
+            persistBooksLocal();
+
+            if (firestoreDb) {
+                try {
+                    await firestoreDb.collection('swarabooks_catalog').doc(bookId).set(newBook);
+                } catch (err) {
+                    console.warn("Firestore save error:", err);
+                }
+            }
+
+            appState.uploadedCoverFile = null;
+            appState.uploadedCoverDataUrl = null;
+            document.getElementById('book-upload-form').reset();
+            document.getElementById('up-price').value = 20;
+            document.getElementById('up-cover-preview').src = DEFAULT_COVER_PHOTO;
+            publishBtn.disabled = false;
+
+            showToast(`"${title}" published!`, "success");
+            renderStoreBooks();
+            switchOwnerTab('manage');
+        };
+
+        window.deletePublishedBook = async (bookId) => {
+            const targetBook = appState.books.find(b => b.id === bookId);
+            if (!targetBook) return;
+
+            appState.books = appState.books.filter(b => b.id !== bookId);
+            persistBooksLocal();
+            renderOwnerManageBooks();
+            renderStoreBooks();
+
+            if (firestoreDb) {
+                const result = await deleteBookFromFirebase(targetBook);
+                if (result.firestoreDeleted) {
+                    showToast("Book deleted from Firebase & Storefront.", "info");
+                } else {
+                    showToast("Book deleted locally. Check Firebase permissions if still in cloud.", "error");
+                }
+            } else {
+                showToast("Book deleted.", "info");
+            }
+        };
+
+        function renderOwnerManageBooks() {
+            const grid = document.getElementById('owner-books-grid');
+            document.getElementById('owner-manage-count').textContent = appState.books.length;
+
+            if (appState.books.length === 0) {
+                grid.innerHTML = `<p class="text-sm text-slate-500 col-span-full py-8 text-center">No books added yet.</p>`;
+                return;
+            }
+
+            grid.innerHTML = appState.books.map(book => `
+                <div class="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70">
+                    <img src="${book.coverUrl}" alt="${book.title}" onerror="this.src='${DEFAULT_COVER_PHOTO}'" class="w-14 h-20 object-cover rounded-xl shadow-sm bg-white shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-bold text-slate-900 truncate">${book.title}</h4>
+                        <p class="text-xs text-slate-500 truncate">${book.content}</p>
+                        <p class="text-xs font-bold text-brand-600 mt-1">₹${book.price} • 30 Days</p>
+                    </div>
+                    <button onclick="deletePublishedBook('${book.id}')" class="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition shrink-0" title="Delete Book">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // ==================== CUSTOMER AUTHENTICATION ====================
+        let custAuthTab = 'mobile';
+
+        window.handleCustomerAuthBtn = () => {
+            if (appState.customer) {
+                appState.customer = null;
+                localStorage.removeItem('sb_customer');
+                updateHeaderCustomerUI();
+                renderStoreBooks();
+                showToast("Signed out.", "info");
+                return;
+            }
+            document.getElementById('modal-customer-login').classList.remove('hidden');
+        };
+
+        window.setCustLoginMethod = (method) => {
+            custAuthTab = method;
+            const btnMob = document.getElementById('cust-method-mobile');
+            const btnGmail = document.getElementById('cust-method-gmail');
+            const fieldMob = document.getElementById('cust-field-mobile');
+            const fieldGmail = document.getElementById('cust-field-gmail');
+
+            if (method === 'mobile') {
+                btnMob.className = "py-2 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition";
+                btnGmail.className = "py-2 rounded-lg text-xs font-bold text-slate-600 transition";
+                fieldMob.classList.remove('hidden');
+                fieldGmail.classList.add('hidden');
+            } else {
+                btnGmail.className = "py-2 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition";
+                btnMob.className = "py-2 rounded-lg text-xs font-bold text-slate-600 transition";
+                fieldGmail.classList.remove('hidden');
+                fieldMob.classList.add('hidden');
+            }
+        };
+
+        window.submitCustomerLogin = (e) => {
+            e.preventDefault();
+            const name = document.getElementById('cust-input-name').value.trim();
+            let accountId = "";
+
+            if (custAuthTab === 'mobile') {
+                const mob = document.getElementById('cust-input-mobile').value.trim();
+                if (!/^[0-9]{10}$/.test(mob)) {
+                    showToast("Please enter a valid 10-digit mobile number.", "error");
+                    return;
+                }
+                accountId = "+91 " + mob;
+            } else {
+                const gmail = document.getElementById('cust-input-gmail').value.trim();
+                if (!gmail.includes('@')) {
+                    showToast("Please enter a valid Gmail address.", "error");
+                    return;
+                }
+                accountId = gmail;
+            }
+
+            appState.customer = { id: accountId, name, method: custAuthTab };
+            localStorage.setItem('sb_customer', JSON.stringify(appState.customer));
+            updateHeaderCustomerUI();
+            closeModal('modal-customer-login');
+            showToast(`Welcome, ${name}!`, "success");
+            renderStoreBooks();
+
+            if (appState.activeCheckoutBookId) {
+                openCheckoutModal(appState.activeCheckoutBookId);
+            }
+        };
+
+        function updateHeaderCustomerUI() {
+            const label = document.getElementById('header-customer-label');
+            if (appState.customer) {
+                label.textContent = `${appState.customer.name.split(' ')[0]} (Exit)`;
+            } else {
+                label.textContent = "Login";
+            }
+        }
+
+        // ==================== 30-DAY LOCK & EXPIRY LOGIC ====================
+        function checkBookAccess(bookId) {
+            if (!appState.customer) return { unlocked: false, daysLeft: 0 };
+            const purchaseKey = `${appState.customer.id}_${bookId}`;
+            const record = appState.purchases[purchaseKey];
+            if (!record) return { unlocked: false, daysLeft: 0 };
+
+            const now = Date.now();
+            if (now >= record.expiresAt) {
+                delete appState.purchases[purchaseKey];
+                persistPurchasesLocal();
+                return { unlocked: false, daysLeft: 0 };
+            }
+
+            const daysLeft = Math.max(1, Math.ceil((record.expiresAt - now) / (1000 * 60 * 60 * 24)));
+            return { unlocked: true, daysLeft };
+        }
+
+        // ==================== RENDER CUSTOMER STOREFRONT ====================
+        window.renderStoreBooks = () => {
+            const grid = document.getElementById('store-books-grid');
+            const emptyBox = document.getElementById('store-empty-state');
+            const query = document.getElementById('store-search-input').value.toLowerCase().trim();
+            const filter = document.getElementById('store-filter-select').value;
+
+            const filtered = appState.books.filter(book => {
+                const matchesText = book.title.toLowerCase().includes(query) || book.content.toLowerCase().includes(query);
+                const access = checkBookAccess(book.id);
+                if (filter === 'unlocked') return matchesText && access.unlocked;
+                if (filter === 'locked') return matchesText && !access.unlocked;
+                return matchesText;
+            });
+
+            document.getElementById('store-book-count').textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyBox.classList.remove('hidden');
+                return;
+            }
+            emptyBox.classList.add('hidden');
+
+            grid.innerHTML = filtered.map(book => {
+                const access = checkBookAccess(book.id);
+                const safeTitle = book.title.replace(/'/g, "\\'");
+                return `
+                <div class="bg-white rounded-3xl overflow-hidden border border-slate-200/80 card-elevated transition-all duration-300 flex flex-col">
+                    <div onclick="onBookCardClick('${book.id}')" class="relative aspect-[3/4] bg-slate-100 overflow-hidden group cursor-pointer">
+                        <img src="${book.coverUrl}" alt="${book.title}" onerror="this.src='${DEFAULT_COVER_PHOTO}'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+
+                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                            ${access.unlocked
+                                ? `<span class="px-3 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-bold shadow-md inline-flex items-center gap-1">
+                                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                                     Unlocked (${access.daysLeft}d left)
+                                   </span>`
+                                : `<span class="px-3 py-1 rounded-full bg-slate-900/85 backdrop-blur-sm text-amber-300 text-[11px] font-bold shadow-md inline-flex items-center gap-1">
+                                     <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                     ₹${book.price} • 30 Days
+                                   </span>`
+                            }
+                            <button onclick="event.stopPropagation(); openShareBookModal('${book.id}', '${safeTitle}')" class="w-9 h-9 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition active:scale-90" title="Share Book">
+                                <svg class="w-4 h-4 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="absolute bottom-3 left-3 flex items-center gap-1.5">
+                            <span class="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold inline-flex items-center gap-1">
+                                <svg class="w-3 h-3 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                                Read
+                            </span>
+                            <span class="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold inline-flex items-center gap-1">
+                                <svg class="w-3 h-3 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                                Audio
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h4 class="text-base font-extrabold text-slate-900 line-clamp-2 leading-snug mb-3">${book.title}</h4>
+                        </div>
+
+                        ${access.unlocked
+                            ? `<button onclick="openBookReader('${book.id}')" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition active:scale-95 flex items-center justify-center gap-2">
+                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                                 <span>Read &amp; Listen Now</span>
+                               </button>`
+                            : `<button onclick="onBookCardClick('${book.id}')" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-brand-600/20 transition active:scale-95 flex items-center justify-center gap-2">
+                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                 <span>Unlock for 30 Days (₹${book.price})</span>
+                               </button>`
+                        }
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        // ==================== STRICT PAYMENT CHECKOUT FLOW ====================
+        window.onBookCardClick = (bookId) => {
+            const book = appState.books.find(b => b.id === bookId);
+            if (!book) return;
+
+            const access = checkBookAccess(bookId);
+            if (access.unlocked) {
+                openBookReader(bookId);
+                return;
+            }
+
+            appState.activeCheckoutBookId = bookId;
+
+            if (!appState.customer) {
+                showToast("Please sign in with your Mobile or Gmail first.", "info");
+                document.getElementById('modal-customer-login').classList.remove('hidden');
+                return;
+            }
+
+            openCheckoutModal(bookId);
+        };
+
+        window.openCheckoutModal = (bookId) => {
+            const book = appState.books.find(b => b.id === bookId);
+            if (!book) return;
+
+            appState.activeCheckoutBookId = bookId;
+            document.getElementById('chk-cover').src = book.coverUrl;
+            document.getElementById('chk-title').textContent = book.title;
+            document.getElementById('chk-price').textContent = `₹${book.price}`;
+            document.getElementById('chk-account').textContent = `${appState.customer.name} (${appState.customer.id})`;
+
+            const upiBtn = document.getElementById('chk-upi-link');
+            if (book.upiLink) {
+                upiBtn.href = book.upiLink;
+                upiBtn.classList.remove('hidden');
+            } else {
+                upiBtn.classList.add('hidden');
+            }
+
+            document.getElementById('modal-checkout').classList.remove('hidden');
+        };
+
+        window.handleUpiLinkClick = (e) => {
+            const href = e.currentTarget.getAttribute('href');
+            if (!href || href === '#') {
+                e.preventDefault();
+                showToast("No UPI link set for this book.", "error");
+                return;
+            }
+            showToast("Opening PhonePe / UPI app. Automatic unlock triggers upon verified payment.", "info");
+        };
+
+        window.startRazorpayCheckout = () => {
+            const book = appState.books.find(b => b.id === appState.activeCheckoutBookId);
+            if (!book || !appState.customer) return;
+
+            const rzpKey = appState.settings.razorpayKey;
+            if (!rzpKey) {
+                showToast("Payment locked: Owner must configure Razorpay Key ID in Owner Settings for automatic PhonePe/UPI unlock.", "error");
+                return;
+            }
+
+            const options = {
+                key: rzpKey,
+                amount: book.price * 100,
+                currency: "INR",
+                name: appState.settings.merchantName || "Library book",
+                description: `${book.title} — 30 Days Access`,
+                image: book.coverUrl,
+                handler: function (response) {
+                    if (response && response.razorpay_payment_id) {
+                        finalizeBookPurchase(response.razorpay_payment_id);
+                    }
+                },
+                prefill: {
+                    name: appState.customer.name,
+                    email: appState.customer.method === 'gmail' ? appState.customer.id : '',
+                    contact: appState.customer.method === 'mobile' ? appState.customer.id.replace('+91 ', '') : ''
+                },
+                theme: { color: "#4f46e5" }
+            };
+
+            try {
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', (resp) => {
+                    showToast("Payment failed: " + resp.error.description, "error");
+                });
+                rzp.open();
+            } catch (err) {
+                showToast("Razorpay checkout failed to open.", "error");
+            }
+        };
+
+        window.finalizeBookPurchase = (txnId) => {
+            const bookId = appState.activeCheckoutBookId;
+            if (!bookId || !appState.customer || !txnId) return;
+
+            const now = Date.now();
+            const purchaseKey = `${appState.customer.id}_${bookId}`;
+            appState.purchases[purchaseKey] = {
+                unlockedAt: now,
+                expiresAt: now + THIRTY_DAYS_MS,
+                txnId
+            };
+            persistPurchasesLocal();
+
+            closeModal('modal-checkout');
+            renderStoreBooks();
+            showToast("Payment verified! Unlocked for 30 days.", "success");
+
+            setTimeout(() => openBookReader(bookId), 300);
+        };
+
+        // ==================== E-BOOK READER & TEXT-TO-SPEECH AUDIO ====================
+        let currentFontSize = 18;
+        let ttsPlaying = false;
+        let ttsPaused = false;
+        let ttsCharOffset = 0;
+        let currentUtterance = null;
+
+        window.openBookReader = (bookId) => {
+            const access = checkBookAccess(bookId);
+            if (!access.unlocked) {
+                onBookCardClick(bookId);
+                return;
+            }
+
+            const book = appState.books.find(b => b.id === bookId);
+            if (!book) return;
+
+            appState.activeReaderBook = book;
+            ttsCharOffset = 0;
+            document.getElementById('rdr-title').textContent = book.title;
+            document.getElementById('audio-title').textContent = book.title;
+            document.getElementById('audio-cover').src = book.coverUrl;
+            document.getElementById('rdr-text-body').textContent = book.content;
+            document.getElementById('tts-percent').textContent = "0%";
+            document.getElementById('tts-progress-bar').style.width = "0%";
+            document.getElementById('tts-live-text').textContent = "Click Play above to listen to the book audio...";
+
+            setReaderTab('read');
+            document.getElementById('modal-reader').classList.remove('hidden');
+        };
+
+        window.closeReader = () => {
+            stopSpeech();
+            document.getElementById('modal-reader').classList.add('hidden');
+        };
+
+        window.setReaderTab = (tab) => {
+            const readPanel = document.getElementById('rdr-panel-read');
+            const audioPanel = document.getElementById('rdr-panel-audio');
+            const readBtn = document.getElementById('rdr-btn-read');
+            const audioBtn = document.getElementById('rdr-btn-audio');
+
+            if (tab === 'read') {
+                readPanel.classList.remove('hidden');
+                audioPanel.classList.add('hidden');
+                readBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white flex items-center gap-1.5 transition";
+                audioBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition";
+            } else {
+                readPanel.classList.add('hidden');
+                audioPanel.classList.remove('hidden');
+                audioBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white flex items-center gap-1.5 transition";
+                readBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition";
+            }
+        };
+
+        window.adjustFontSize = (delta) => {
+            currentFontSize = Math.min(28, Math.max(14, currentFontSize + delta));
+            document.getElementById('rdr-text-body').style.fontSize = `${currentFontSize}px`;
+        };
+
+        function loadSpeechVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const populate = () => {
+                const voices = window.speechSynthesis.getVoices();
+                const select = document.getElementById('tts-voice');
+                if (!select) return;
+
+                const filteredVoices = voices.filter(v =>
+                    v.lang.toLowerCase().startsWith('en') || v.lang.toLowerCase().startsWith('te')
+                );
+                const listToRender = filteredVoices.length > 0 ? filteredVoices : voices;
+
+                select.innerHTML = `<option value="auto">Auto (English / Telugu)</option>` +
+                    listToRender.map(v => `<option value="${v.name}">${v.name} (${v.lang})</option>`).join('');
+            };
+            populate();
+            window.speechSynthesis.onvoiceschanged = populate;
+        }
+
+        window.toggleSpeech = () => {
+            if (!('speechSynthesis' in window)) {
+                showToast("Text-to-Speech is not supported in this browser.", "error");
+                return;
+            }
+
+            if (ttsPlaying && !ttsPaused) {
+                window.speechSynthesis.pause();
+                ttsPaused = true;
+                updateSpeechUI(false, "Paused");
+            } else if (ttsPlaying && ttsPaused) {
+                window.speechSynthesis.resume();
+                ttsPaused = false;
+                updateSpeechUI(true, "Playing Audio...");
+            } else {
+                playSpeech(ttsCharOffset);
+            }
+        };
+
+        window.playSpeech = (startIndex = 0) => {
+            if (!appState.activeReaderBook || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+
+            const fullText = appState.activeReaderBook.content || "";
+            if (!fullText.length) return;
+
+            const safeStart = Math.max(0, Math.min(fullText.length - 1, startIndex));
+            ttsCharOffset = safeStart;
+            const sliceText = fullText.slice(safeStart);
+
+            currentUtterance = new SpeechSynthesisUtterance(sliceText);
+
+            const selectedVoice = document.getElementById('tts-voice').value;
+            const voices = window.speechSynthesis.getVoices();
+            if (selectedVoice !== 'auto') {
+                const match = voices.find(v => v.name === selectedVoice);
+                if (match) currentUtterance.voice = match;
+            }
+
+            const speed = parseFloat(document.getElementById('tts-speed').value) || 1.0;
+            currentUtterance.rate = speed;
+
+            currentUtterance.onstart = () => {
+                ttsPlaying = true;
+                ttsPaused = false;
+                updateSpeechUI(true, "Playing Audio...");
+                updateAudioProgressUI(safeStart, fullText);
+            };
+
+            currentUtterance.onboundary = (event) => {
+                if (event.name === 'word') {
+                    const absoluteIndex = Math.min(fullText.length, safeStart + event.charIndex);
+                    ttsCharOffset = absoluteIndex;
+                    updateAudioProgressUI(absoluteIndex, fullText);
+                }
+            };
+
+            currentUtterance.onend = () => {
+                ttsPlaying = false;
+                ttsPaused = false;
+                ttsCharOffset = 0;
+                document.getElementById('tts-percent').textContent = "100%";
+                document.getElementById('tts-progress-bar').style.width = "100%";
+                updateSpeechUI(false, "Finished Audio");
+            };
+
+            currentUtterance.onerror = (e) => {
+                if (e.error === 'interrupted' || e.error === 'canceled') return;
+                ttsPlaying = false;
+                ttsPaused = false;
+                updateSpeechUI(false, "Press Play to listen");
+            };
+
+            window.speechSynthesis.speak(currentUtterance);
+        };
+
+        function updateAudioProgressUI(charIndex, fullText) {
+            if (!fullText || fullText.length === 0) return;
+            const pct = Math.min(100, Math.round((charIndex / fullText.length) * 100));
+            document.getElementById('tts-percent').textContent = `${pct}%`;
+            document.getElementById('tts-progress-bar').style.width = `${pct}%`;
+            document.getElementById('tts-live-text').textContent = fullText.slice(charIndex, charIndex + 200) + (charIndex + 200 < fullText.length ? "..." : "");
+        }
+
+        window.skipSpeechSeconds = (deltaSeconds) => {
+            if (!appState.activeReaderBook) return;
+            const fullText = appState.activeReaderBook.content || "";
+            if (!fullText.length) return;
+
+            const speed = parseFloat(document.getElementById('tts-speed').value) || 1.0;
+            const charDelta = Math.round(deltaSeconds * 15 * speed);
+            let targetIndex = Math.max(0, Math.min(fullText.length - 1, ttsCharOffset + charDelta));
+
+            if (targetIndex > 0 && targetIndex < fullText.length - 1) {
+                const nextSpace = fullText.indexOf(' ', targetIndex);
+                if (nextSpace !== -1 && nextSpace - targetIndex < 25) {
+                    targetIndex = nextSpace + 1;
+                }
+            }
+
+            ttsCharOffset = targetIndex;
+            updateAudioProgressUI(targetIndex, fullText);
+
+            if (ttsPlaying && !ttsPaused) {
+                playSpeech(targetIndex);
+            } else {
+                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                ttsPlaying = false;
+                ttsPaused = false;
+                updateSpeechUI(false, deltaSeconds < 0 ? "Rewound 10s • Ready" : "Forwarded 10s • Ready");
+            }
+        };
+
+        window.stopSpeech = () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            ttsPlaying = false;
+            ttsPaused = false;
+            ttsCharOffset = 0;
+            document.getElementById('tts-percent').textContent = "0%";
+            document.getElementById('tts-progress-bar').style.width = "0%";
+            updateSpeechUI(false, "Stopped");
+        };
+
+        window.restartSpeechIfActive = () => {
+            if (ttsPlaying && !ttsPaused) playSpeech(ttsCharOffset);
+        };
+
+        function updateSpeechUI(isPlayingNow, statusLabel) {
+            const iconWrap = document.getElementById('tts-play-icon-wrap');
+            const ring = document.getElementById('tts-ring');
+            document.getElementById('tts-status').textContent = statusLabel;
+
+            if (isPlayingNow) {
+                iconWrap.innerHTML = `<svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`;
+                ring.classList.remove('hidden');
+            } else {
+                iconWrap.innerHTML = `<svg class="w-7 h-7 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+                ring.classList.add('hidden');
+            }
+        }
+
+        // ==================== SOCIAL SHARE MODAL ====================
+        window.openShareAppModal = () => {
+            const url = window.location.origin + window.location.pathname;
+            openShareModal(
+                "Share Library book",
+                "Read and listen to books on Library book!",
+                url
+            );
+        };
+
+        window.openShareBookModal = (bookId, bookTitle) => {
+            const url = `${window.location.origin}${window.location.pathname}?book=${bookId}`;
+            openShareModal(
+                `Share "${bookTitle}"`,
+                `Read and listen to "${bookTitle}" on Library book.`,
+                url
+            );
+        };
+
+        function openShareModal(title, text, url) {
+            appState.sharePayload = { title, text, url };
+            document.getElementById('share-modal-title').textContent = title;
+            document.getElementById('share-modal-desc').textContent = text;
+            document.getElementById('share-link-input').value = url;
+            document.getElementById('modal-share').classList.remove('hidden');
+        }
+
+        window.triggerSocialShare = (platform) => {
+            const { text, url } = appState.sharePayload;
+            const fullMsg = `${text}\n${url}`;
+            const encText = encodeURIComponent(text);
+            const encUrl = encodeURIComponent(url);
+            const encFull = encodeURIComponent(fullMsg);
+
+            if (platform === 'whatsapp') {
+                window.open(`https://api.whatsapp.com/send?text=${encFull}`, '_blank');
+            } else if (platform === 'facebook') {
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encUrl}&quote=${encText}`, '_blank');
+            } else if (platform === 'twitter') {
+                window.open(`https://twitter.com/intent/tweet?text=${encText}&url=${encUrl}`, '_blank');
+            } else if (platform === 'instagram') {
+                copyTextFallback(fullMsg);
+                showToast("Link copied! Paste it in Instagram.", "success");
+                setTimeout(() => window.open('https://www.instagram.com/', '_blank'), 600);
+            }
+        };
+
+        window.copyShareLink = () => {
+            copyTextFallback(appState.sharePayload.url);
+            showToast("Link copied to clipboard!", "success");
+        };
+
+        function copyTextFallback(str) {
+            const el = document.createElement('input');
+            el.value = str;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        }
+
+        // ==================== UTILITIES ====================
+        window.closeModal = (id) => {
+            document.getElementById(id).classList.add('hidden');
+        };
+
+        window.showToast = (message, type = "info") => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const styles = {
+                success: "bg-emerald-600 text-white",
+                error: "bg-red-600 text-white",
+                info: "bg-slate-900 text-white"
+            };
+            toast.className = `${styles[type]} px-4 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 pointer-events-auto transition-all duration-300`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        };
+    </script>
+</body>
+</html>
+```
